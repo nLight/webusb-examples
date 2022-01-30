@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style type = "text/css">
+            body{
+                background: #000000;
+                padding: 0px;
+                margin: 0px;
+                text-align: center;
+            }
+        </style>
+        <script src="../serial.js"></script>
+        <script src = "src/js/phaser.min.js"></script>
+        <script src = "src/js/streetfightergame.js?1"></script>      
+    </head>
+      <body>
+        <p>
+          <button id="connect">Connect</button> <span id="status"></span>
+        </p>
+        <img src="src/sprites/sber.png" />
+        
+      </body>
+      <script>
+        window.usbPort;
+        (function() {
+          'use strict';
+        
+          document.addEventListener('DOMContentLoaded', event => {
+            let connectButton = document.querySelector("#connect");
+            let currentKey = 0;
+        
+            function connect() {
+              window.usbPort.connect().then(() => {
+                connectButton.textContent = 'Disconnect';
+        
+                window.usbPort.onReceive = data => {
+                  const textDecoder = new TextDecoder();
+                  const message = textDecoder.decode(data);
+                  const serialEvent = new CustomEvent("serial", {detail: message});
+                  document.dispatchEvent(serialEvent);
+                }
+                window.usbPort.onReceiveError = error => {
+                  console.error(error);
+                };
+              }, error => {
+                console.log(error);
+              });
+            }
+        
+            connectButton.addEventListener('click', function() {
+              if (window.usbPort) {
+                window.usbPort.disconnect();
+                connectButton.textContent = 'Connect';
+                window.usbPort = null;
+              } else {
+                serial.requestPort().then(selectedPort => {
+                  window.usbPort = selectedPort;
+                  connect();
+                }).catch(error => {
+                  console.log(error);
+                });
+              }
+            });
+        
+            serial.getPorts().then(ports => {
+              if (ports.length == 0) {
+                console.log('No device found.');
+              } else {
+                console.log('Connecting...');
+                window.usbPort = ports[0];
+                connect();
+              }
+            });
+          });
+        })();
+  </script>
+</html>
